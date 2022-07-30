@@ -14,10 +14,10 @@ FROM alpine:latest AS runner
 RUN apk add --no-cache openssl ncurses-libs libgcc libstdc++
 
 COPY --from=builder /workspace/_build/prod/rel/idlebot /opt/idlebot
-ADD docker/docker-entrypoint.sh
+ADD docker/docker-entrypoint.sh /docker-entrypoint.sh
 
 VOLUME /config
 ENV IDLEBOT_ENV_FILE="/config/idlebot.env"
 
-ENTRYPOINT ["/bin/sh", "docker-entrypoint.sh"]
+ENTRYPOINT ["/bin/sh", "/docker-entrypoint.sh"]
 CMD ["start"]
