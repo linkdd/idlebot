@@ -1,0 +1,3 @@
+# IdleBot
+
+Simple IRC bot.
