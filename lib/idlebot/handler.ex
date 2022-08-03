@@ -68,6 +68,10 @@ defmodule IdleBot.Handler do
     channels = state.channels |> List.delete(channel)
     {:reply, result, %State{state | channels: channels}}
   end
+  def handle_call({:say, dest, msg}, _from, %State{} = state) do
+    result = ExIRC.Client.msg(state.client, :privmsg, dest, msg)
+    {:reply, result, state}
+  end
 
   @impl true
   def handle_info({:connected, server, port}, %State{} = state) do
