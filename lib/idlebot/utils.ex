@@ -18,6 +18,8 @@ defmodule IdleBot.Utils do
     HTTPoison.get(url, [], follow_redirect: true)
       |> Result.map_err(fn reason -> {:http_request_failed, reason} end)
       |> Result.and_then(&handle_response/1)
+  rescue
+    err in ArgumentError -> {:error, err}
   end
 
   defp handle_response(resp) do
