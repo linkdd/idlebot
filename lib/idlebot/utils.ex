@@ -34,7 +34,15 @@ defmodule IdleBot.Utils do
     Floki.parse_document(html)
       |> Result.map_err(fn reason -> {:invalid_html, reason} end)
       |> Result.and_then(fn doc ->
-        case doc |> Floki.find("title") |> Floki.text() do
+        data = doc
+          |> Floki.find("head > title")
+          |> Enum.take(1)
+          |> Floki.text()
+          |> Floki.HTMLParser.parse_fragment()
+          |> Result.unwrap!()
+          |> Floki.text()
+
+        case data do
           "" ->
             {:error, :no_title}
 
