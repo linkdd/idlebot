@@ -41,6 +41,9 @@ defmodule IdleBot.Utils do
           |> Floki.HTMLParser.parse_fragment()
           |> Result.unwrap!()
           |> Floki.text()
+          |> String.split([" ", "\n", "\t", "\r"])
+          |> Enum.filter(fn s -> s != "" end)
+          |> Enum.join(" ")
 
         case data do
           "" ->
