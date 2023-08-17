@@ -101,7 +101,9 @@ defmodule IdleBot.Handler do
     {:stop, :normal, state}
   end
   def handle_info({:received, "!" <> command, sender, channel}, %State{} = state) do
-    IdleBot.Commands.dispatch(command)
+    command
+      |> String.split()
+      |> IdleBot.Commands.dispatch()
       |> Result.and_then(fn continuation -> continuation.(sender, channel, state) end)
       |> Result.or_else(fn reason -> send_error(reason, channel, state) end)
       |> Result.unwrap!()
