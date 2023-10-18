@@ -1,4 +1,4 @@
-defmodule IdleBot.QuotDB do
+defmodule IdleBot.QuoteDB do
   @moduledoc false
 
   use GenServer
@@ -35,16 +35,15 @@ defmodule IdleBot.QuotDB do
   def init(%State{} = state) do
     state = %{state | table_id: ETS.new(:idlebot_quotedb, [:set])}
 
-    with
-      {:ok, content} <- File.read(state.file_path),
-      {:ok, data} <- Jason.decode(content),
-    do
-      data |> Enum.each(fn {channel, quotes} ->
-        ETS.insert(state.table_id, {channel, quotes})
-      end)
+    File.read(state.file_path)
+      |> Result.and_then(fn content -> Jason.decode(content) end)
+      |> Result.and_then(fn data ->
+        data |> Enum.each(fn {channel, quotes} ->
+          ETS.insert(state.table_id, {channel, quotes})
+        end)
 
-      {:ok, state}
-    end
+        {:ok, state}
+      end)
   end
 
   @impl true
@@ -57,7 +56,7 @@ defmodule IdleBot.QuotDB do
 
     {:reply, reply, state}
   end
-  def handle_call({:add, channel, author, text}, _from, %State = state) do
+  def handle_call({:add, channel, author, text}, _from, %State{} = state) do
     quotes = case ETS.lookup(state.table_id, channel) do
       [] -> []
       [{_, quotes}] -> quotes
@@ -72,24 +71,25 @@ defmodule IdleBot.QuotDB do
   def handle_cast(:sync_to_disk, %State{} = state) do
     data = ETS.foldl(
       fn {channel, quotes}, acc ->
-        quotes = quotes |> Enum.each(fn {author, text} -> %{
-          "author" => author,
-          "text" => text
-        })
+        quotes = quotes |> Enum.each(fn {author, text} ->
+          %{
+            "author" => author,
+            "text" => text
+          }
+        end)
         acc |> Map.put(channel, quotes)
       end,
       %{},
       state.table_id
     )
 
-    with
-      {:ok, content} <- Jason.encode(data),
-      :ok <- File.write(state.file_path, content)
-    do
-      :ok
-    else
-      err -> Logger.error("Could not sync quote database: #{err}")
-    end
+    Jason.encode(data)
+      |> Result.and_then(fn content -> File.write(state.file_path, content) end)
+      |> Result.or_else(fn err ->
+        Logger.error("Could not sync quote database: #{err}")
+        :ok
+      end)
+      |> Result.unwrap!()
 
     {:noreply, state}
   end
