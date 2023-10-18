@@ -9,6 +9,7 @@ defmodule IdleBot.Application do
     client = ExIRC.start_link!() |> Result.unwrap!()
 
     children = [
+      {IdleBot.QuoteDB, []},
       {IdleBot.Handler, client}
     ]
 
