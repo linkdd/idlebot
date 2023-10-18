@@ -10,3 +10,4 @@ config :idlebot,
   user: get_env_cfg("IDLEBOT_IRC_USER", "idlebot"),
   name: get_env_cfg("IDLEBOT_IRC_NAME", "Idle Bot"),
   tls: get_env_cfg("IDLEBOT_IRC_TLS", "no") == "yes"
+  quotedb_path: get_env_cfg("IDLEBOT_QUOTEDB_PATH", "/tmp/idlebot-quotedb.json")
