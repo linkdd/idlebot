@@ -29,8 +29,8 @@ defmodule IdleBot.MixProject do
     [
       {:rustic_result, "~> 0.6"},
       {:exirc, "~> 2.0"},
-      {:httpoison, "~> 1.8"},
-      {:floki, "~> 0.33"}
+      {:httpoison, "~> 2.1"},
+      {:floki, "~> 0.35"},
     ]
   end
 end
