@@ -31,6 +31,7 @@ defmodule IdleBot.MixProject do
       {:exirc, "~> 2.0"},
       {:httpoison, "~> 2.1"},
       {:floki, "~> 0.35"},
+      {:jason, "~> 1.4"},
     ]
   end
 end
