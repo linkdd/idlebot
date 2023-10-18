@@ -39,7 +39,7 @@ defmodule IdleBot.QuoteDB do
       |> Result.and_then(fn content -> Jason.decode(content) end)
       |> Result.and_then(fn data ->
         data |> Enum.each(fn {channel, quotes} ->
-          quotes = quotes |> Enum.map(fn %{"author" => author, "text" => text} > {author, text} end)
+          quotes = quotes |> Enum.map(fn %{"author" => author, "text" => text} -> {author, text} end)
           ETS.insert(state.table_id, {channel, quotes})
         end)
 
