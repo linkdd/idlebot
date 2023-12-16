@@ -32,6 +32,7 @@ defmodule IdleBot.MixProject do
       {:httpoison, "~> 2.1"},
       {:floki, "~> 0.35"},
       {:jason, "~> 1.4"},
+      {:seqfuzz, "~> 0.2"},
     ]
   end
 end
