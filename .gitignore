@@ -27,3 +27,4 @@ idlebot-*.tar
 
 # Local environment configuration
 /.env
+/quotedb.json
