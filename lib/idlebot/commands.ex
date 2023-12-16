@@ -40,10 +40,21 @@ defmodule IdleBot.Commands do
     end
     {:ok, continuation}
   end
+  def dispatch(["quote", "search" | patterns]) when length(patterns) > 0 do
+    continuation = fn sender, channel, %State{} = state ->
+      msg = case IdleBot.QuoteDB.get_random(channel, patterns) do
+        :none -> "No quotes found"
+        {:some, {author, text}} -> "> #{text} -- #{author}"
+      end
+      ExIRC.Client.msg(state.client, :privmsg, channel, msg)
+      :ok
+    end
+    {:ok, continuation}
+  end
   def dispatch(["quote" | _]) do
     {:error, {
       :invalid_command,
-      {:quote, :usage, ["!quote", "quote add <author> <text>"]}
+      {:quote, :usage, ["!quote", "quote add <author> <text>", "quote search <text>"]}
     }}
   end
   def dispatch(cmd) do

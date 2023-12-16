@@ -23,8 +23,8 @@ defmodule IdleBot.QuoteDB do
     GenServer.start_link(__MODULE__, state, name: __MODULE__)
   end
 
-  def get_random(channel) do
-    GenServer.call(__MODULE__, {:get_random, channel})
+  def get_random(channel, patterns \\ []) do
+    GenServer.call(__MODULE__, {:get_random, channel, patterns})
   end
 
   def add(channel, author, text) do
@@ -48,11 +48,16 @@ defmodule IdleBot.QuoteDB do
   end
 
   @impl true
-  def handle_call({:get_random, channel}, _from, %State{} = state) do
+  def handle_call({:get_random, channel, patterns}, _from, %State{} = state) do
     reply = case ETS.lookup(state.table_id, channel) do
       [] -> :none
       [{_, []}] -> :none
-      [{_, quotes}] -> {:some, Enum.random(quotes)}
+      [{_, quotes}] ->
+        try do
+          {:some, quotes |> filter_quotes(patterns) |> Enum.random()}
+        rescue
+          Enum.EmptyError -> :none
+        end
     end
 
     {:reply, reply, state}
@@ -93,5 +98,13 @@ defmodule IdleBot.QuoteDB do
       |> Result.unwrap!()
 
     {:noreply, state}
+  end
+
+  defp filter_quotes([], _), do: []
+  defp filter_quotes(quotes, []), do: quotes
+  defp filter_quotes(quotes, [pattern | patterns]) do
+    quotes
+      |> Seqfuzz.filter(pattern, &(elem(&1, 1)))
+      |> filter_quotes(patterns)
   end
 end
