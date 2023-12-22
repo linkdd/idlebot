@@ -12,4 +12,12 @@ defmodule IdleBot do
   def say(dest, msg) do
     GenServer.call(__MODULE__, {:say, dest, msg})
   end
+
+  def ignore(nick) do
+    GenServer.call(__MODULE__, {:ignore, nick})
+  end
+
+  def unignore(nick) do
+    GenServer.call(__MODULE__, {:unignore, nick})
+  end
 end

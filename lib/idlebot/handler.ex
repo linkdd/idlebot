@@ -17,7 +17,8 @@ defmodule IdleBot.Handler do
       :name,
       :tls,
       :client,
-      :channels
+      :channels,
+      :ignored
     ]
   end
 
@@ -31,7 +32,8 @@ defmodule IdleBot.Handler do
       name: Application.fetch_env!(:idlebot, :name),
       tls: Application.fetch_env!(:idlebot, :tls),
       client: client,
-      channels: []
+      channels: [],
+      ignored: []
     }
     GenServer.start_link(__MODULE__, state, name: IdleBot)
   end
@@ -72,6 +74,13 @@ defmodule IdleBot.Handler do
     result = ExIRC.Client.msg(state.client, :privmsg, dest, msg)
     {:reply, result, state}
   end
+  def handle_call({:ignore, nick}, _from, %State{} = state) do
+    {:reply, :ok, %State{state | ignored: [nick | state.ignored]}}
+  end
+  def handle_call({:unignore, nick}, _from, %State{} = state) do
+    ignored = state.ignored |> List.delete(nick)
+    {:reply, :ok, %State{state | ignored: ignored}}
+  end
 
   @impl true
   def handle_info({:connected, server, port}, %State{} = state) do
@@ -101,24 +110,30 @@ defmodule IdleBot.Handler do
     {:stop, :normal, state}
   end
   def handle_info({:received, "!" <> command, sender, channel}, %State{} = state) do
-    command
-      |> String.split()
-      |> IdleBot.Commands.dispatch()
-      |> Result.and_then(fn continuation -> continuation.(sender, channel, state) end)
-      |> Result.or_else(fn reason -> send_error(reason, channel, state) end)
-      |> Result.unwrap!()
+    if not Enum.member?(state.ignored, sender.nick) do
+      command
+        |> String.split()
+        |> IdleBot.Commands.dispatch()
+        |> Result.and_then(fn continuation -> continuation.(sender, channel, state) end)
+        |> Result.or_else(fn reason -> send_error(reason, channel, state) end)
+        |> Result.unwrap!()
+    end
 
     {:noreply, state}
   end
-  def handle_info({:received, msg, _sender, channel}, %State{} = state) do
-    IdleBot.Utils.get_links_from_message(msg)
-      |> Enum.map(fn link -> send_to({channel, link}, state) end)
+  def handle_info({:received, msg, sender, channel}, %State{} = state) do
+    if not Enum.member?(state.ignored, sender.nick) do
+      IdleBot.Utils.get_links_from_message(msg)
+        |> Enum.map(fn link -> send_to({channel, link}, state) end)
+    end
 
     {:noreply, state}
   end
   def handle_info({:received, msg, sender}, %State{} = state) do
-    IdleBot.Utils.get_links_from_message(msg)
-      |> Enum.map(fn link -> send_to({sender.nick, link}, state) end)
+    if not Enum.member?(state.ignored, sender.nick) do
+      IdleBot.Utils.get_links_from_message(msg)
+        |> Enum.map(fn link -> send_to({sender.nick, link}, state) end)
+    end
 
     {:noreply, state}
   end
